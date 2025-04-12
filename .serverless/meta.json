@@ -1,0 +1,284 @@
+{
+  "D:\\3rd year\\csc\\learn-verse-hub-main\\serverless.yml": {
+    "versionFramework": "4.12.0",
+    "servicePath": "D:\\3rd year\\csc\\learn-verse-hub-main\\serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "eduverse-platform",
+      "frameworkVersion": "3",
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs18.x",
+        "region": "us-east-1",
+        "environment": {
+          "USERS_TABLE": "eduverse-platform-users-${opt:stage, self:provider.stage}",
+          "COURSES_TABLE": "eduverse-platform-courses-${opt:stage, self:provider.stage}",
+          "ENROLLMENTS_TABLE": "eduverse-platform-enrollments-${opt:stage, self:provider.stage}",
+          "BUCKET_NAME": "eduverse-platform-content-${opt:stage, self:provider.stage}"
+        }
+      },
+      "resources": {
+        "Resources": {
+          "UsersTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "${self:provider.environment.USERS_TABLE}",
+              "BillingMode": "PAY_PER_REQUEST",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "email",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "id",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "email",
+                  "KeyType": "HASH"
+                }
+              ],
+              "GlobalSecondaryIndexes": [
+                {
+                  "IndexName": "id-index",
+                  "KeySchema": [
+                    {
+                      "AttributeName": "id",
+                      "KeyType": "HASH"
+                    }
+                  ],
+                  "Projection": {
+                    "ProjectionType": "ALL"
+                  }
+                }
+              ]
+            }
+          },
+          "CoursesTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "${self:provider.environment.COURSES_TABLE}",
+              "BillingMode": "PAY_PER_REQUEST",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "id",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "id",
+                  "KeyType": "HASH"
+                }
+              ]
+            }
+          },
+          "EnrollmentsTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "${self:provider.environment.ENROLLMENTS_TABLE}",
+              "BillingMode": "PAY_PER_REQUEST",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "userId",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "courseId",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "userId",
+                  "KeyType": "HASH"
+                },
+                {
+                  "AttributeName": "courseId",
+                  "KeyType": "RANGE"
+                }
+              ]
+            }
+          },
+          "ContentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "${self:provider.environment.BUCKET_NAME}",
+              "CorsConfiguration": {
+                "CorsRules": [
+                  {
+                    "AllowedHeaders": [
+                      "*"
+                    ],
+                    "AllowedMethods": [
+                      "GET",
+                      "PUT",
+                      "POST",
+                      "DELETE"
+                    ],
+                    "AllowedOrigins": [
+                      "*"
+                    ],
+                    "MaxAge": 3000
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "functions": {
+        "auth": {
+          "handler": "src/functions/auth.handler",
+          "events": [
+            {
+              "http": {
+                "path": "/auth/{action}",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "users": {
+          "handler": "src/functions/users.handler",
+          "events": [
+            {
+              "http": {
+                "path": "/users",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/users",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/users/{id}",
+                "method": "put",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/users/{id}",
+                "method": "delete",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "courses": {
+          "handler": "src/functions/courses.handler",
+          "events": [
+            {
+              "http": {
+                "path": "/courses",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/courses",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/courses/{id}",
+                "method": "put",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/courses/{id}",
+                "method": "delete",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "enrollments": {
+          "handler": "src/functions/enrollments.handler",
+          "events": [
+            {
+              "http": {
+                "path": "/enrollments",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/enrollments/{userId}",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/enrollments/{userId}/{courseId}",
+                "method": "delete",
+                "cors": true
+              }
+            }
+          ]
+        }
+      },
+      "plugins": [
+        "serverless-offline",
+        "serverless-dynamodb-local",
+        "serverless-s3-local"
+      ]
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs18.x",
+      "region": "us-east-1",
+      "environment": {
+        "USERS_TABLE": "eduverse-platform-users-${opt:stage, self:provider.stage}",
+        "COURSES_TABLE": "eduverse-platform-courses-${opt:stage, self:provider.stage}",
+        "ENROLLMENTS_TABLE": "eduverse-platform-enrollments-${opt:stage, self:provider.stage}",
+        "BUCKET_NAME": "eduverse-platform-content-${opt:stage, self:provider.stage}"
+      }
+    },
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": true,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "error": {
+      "message": "Cannot resolve '${opt:stage, self:provider.stage}' variable at 'provider.environment.USERS_TABLE'. No value is available for this variable, and no default value was provided. Please check your variable definitions or provide a default value.",
+      "stack": "Error: Cannot resolve '${opt:stage, self:provider.stage}' variable at 'provider.environment.USERS_TABLE'. No value is available for this variable, and no default value was provided. Please check your variable definitions or provide a default value.\n    at _ResolverManager.resolve (file:///C:/Users/damod/.serverless/releases/4.12.0/package/dist/sf-core.js:560:31882)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async #handlePlaceholderNode (file:///C:/Users/damod/.serverless/releases/4.12.0/package/dist/sf-core.js:560:30089)\n    at async file:///C:/Users/damod/.serverless/releases/4.12.0/package/dist/sf-core.js:560:27961\n    at async processNodeAndHandleCompletion (file:///C:/Users/damod/.serverless/releases/4.12.0/package/dist/sf-core.js:560:16742)",
+      "code": "MISSING_VARIABLE_RESULT"
+    },
+    "serviceRawFile": "service: eduverse-platform\r\n\r\nframeworkVersion: '3'\r\n\r\nprovider:\r\n  name: aws\r\n  runtime: nodejs18.x\r\n  region: us-east-1\r\n  environment:\r\n    USERS_TABLE: ${self:service}-users-${opt:stage, self:provider.stage}\r\n    COURSES_TABLE: ${self:service}-courses-${opt:stage, self:provider.stage}\r\n    ENROLLMENTS_TABLE: ${self:service}-enrollments-${opt:stage, self:provider.stage}\r\n    BUCKET_NAME: ${self:service}-content-${opt:stage, self:provider.stage}\r\n\r\nresources:\r\n  Resources:\r\n    UsersTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:provider.environment.USERS_TABLE}\r\n        BillingMode: PAY_PER_REQUEST\r\n        AttributeDefinitions:\r\n          - AttributeName: email\r\n            AttributeType: S\r\n          - AttributeName: id\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: email\r\n            KeyType: HASH\r\n        GlobalSecondaryIndexes:\r\n          - IndexName: id-index\r\n            KeySchema:\r\n              - AttributeName: id\r\n                KeyType: HASH\r\n            Projection:\r\n              ProjectionType: ALL\r\n\r\n    CoursesTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:provider.environment.COURSES_TABLE}\r\n        BillingMode: PAY_PER_REQUEST\r\n        AttributeDefinitions:\r\n          - AttributeName: id\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: id\r\n            KeyType: HASH\r\n\r\n    EnrollmentsTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:provider.environment.ENROLLMENTS_TABLE}\r\n        BillingMode: PAY_PER_REQUEST\r\n        AttributeDefinitions:\r\n          - AttributeName: userId\r\n            AttributeType: S\r\n          - AttributeName: courseId\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: userId\r\n            KeyType: HASH\r\n          - AttributeName: courseId\r\n            KeyType: RANGE\r\n\r\n    ContentBucket:\r\n      Type: AWS::S3::Bucket\r\n      Properties:\r\n        BucketName: ${self:provider.environment.BUCKET_NAME}\r\n        CorsConfiguration:\r\n          CorsRules:\r\n            - AllowedHeaders: ['*']\r\n              AllowedMethods: [GET, PUT, POST, DELETE]\r\n              AllowedOrigins: ['*']\r\n              MaxAge: 3000\r\n\r\nfunctions:\r\n  auth:\r\n    handler: src/functions/auth.handler\r\n    events:\r\n      - http:\r\n          path: /auth/{action}\r\n          method: post\r\n          cors: true\r\n\r\n  users:\r\n    handler: src/functions/users.handler\r\n    events:\r\n      - http:\r\n          path: /users\r\n          method: get\r\n          cors: true\r\n      - http:\r\n          path: /users\r\n          method: post\r\n          cors: true\r\n      - http:\r\n          path: /users/{id}\r\n          method: put\r\n          cors: true\r\n      - http:\r\n          path: /users/{id}\r\n          method: delete\r\n          cors: true\r\n\r\n  courses:\r\n    handler: src/functions/courses.handler\r\n    events:\r\n      - http:\r\n          path: /courses\r\n          method: get\r\n          cors: true\r\n      - http:\r\n          path: /courses\r\n          method: post\r\n          cors: true\r\n      - http:\r\n          path: /courses/{id}\r\n          method: put\r\n          cors: true\r\n      - http:\r\n          path: /courses/{id}\r\n          method: delete\r\n          cors: true\r\n\r\n  enrollments:\r\n    handler: src/functions/enrollments.handler\r\n    events:\r\n      - http:\r\n          path: /enrollments\r\n          method: post\r\n          cors: true\r\n      - http:\r\n          path: /enrollments/{userId}\r\n          method: get\r\n          cors: true\r\n      - http:\r\n          path: /enrollments/{userId}/{courseId}\r\n          method: delete\r\n          cors: true\r\n\r\nplugins:\r\n  - serverless-offline\r\n  - serverless-dynamodb-local\r\n  - serverless-s3-local ",
+    "command": [
+      "deploy"
+    ],
+    "options": {},
+    "orgId": "1b3c450a-6db4-4bc3-9344-39fa330c4a96",
+    "orgName": "harshithd",
+    "userId": "PjY20GdMGSVR3M8cPc",
+    "userName": "harshithd",
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}

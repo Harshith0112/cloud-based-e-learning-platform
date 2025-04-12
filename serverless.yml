@@ -1,0 +1,145 @@
+service: eduverse-platform
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    USERS_TABLE: ${self:service}-users-${opt:stage, self:provider.stage}
+    COURSES_TABLE: ${self:service}-courses-${opt:stage, self:provider.stage}
+    ENROLLMENTS_TABLE: ${self:service}-enrollments-${opt:stage, self:provider.stage}
+    BUCKET_NAME: ${self:service}-content-${opt:stage, self:provider.stage}
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.USERS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: id-index
+            KeySchema:
+              - AttributeName: id
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    CoursesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.COURSES_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+
+    EnrollmentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.ENROLLMENTS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: courseId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: courseId
+            KeyType: RANGE
+
+    ContentBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.BUCKET_NAME}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders: ['*']
+              AllowedMethods: [GET, PUT, POST, DELETE]
+              AllowedOrigins: ['*']
+              MaxAge: 3000
+
+functions:
+  auth:
+    handler: src/functions/auth.handler
+    events:
+      - http:
+          path: /auth/{action}
+          method: post
+          cors: true
+
+  users:
+    handler: src/functions/users.handler
+    events:
+      - http:
+          path: /users
+          method: get
+          cors: true
+      - http:
+          path: /users
+          method: post
+          cors: true
+      - http:
+          path: /users/{id}
+          method: put
+          cors: true
+      - http:
+          path: /users/{id}
+          method: delete
+          cors: true
+
+  courses:
+    handler: src/functions/courses.handler
+    events:
+      - http:
+          path: /courses
+          method: get
+          cors: true
+      - http:
+          path: /courses
+          method: post
+          cors: true
+      - http:
+          path: /courses/{id}
+          method: put
+          cors: true
+      - http:
+          path: /courses/{id}
+          method: delete
+          cors: true
+
+  enrollments:
+    handler: src/functions/enrollments.handler
+    events:
+      - http:
+          path: /enrollments
+          method: post
+          cors: true
+      - http:
+          path: /enrollments/{userId}
+          method: get
+          cors: true
+      - http:
+          path: /enrollments/{userId}/{courseId}
+          method: delete
+          cors: true
+
+plugins:
+  - serverless-offline
+  - serverless-dynamodb-local
+  - serverless-s3-local 
